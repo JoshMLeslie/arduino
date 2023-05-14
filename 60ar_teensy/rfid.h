@@ -3,12 +3,12 @@ RFID reader
 
 Call #readRFID() to get the tag. Uses Teensy Serial1 or SoftwareSerial(6,8) for others
 */
-
+const bool RFID_DEBUG = false;
 // RFID setup
 #if defined(__IMXRT1062__)
-#define RFID_SERIAL Serial1
+  #define RFID_SERIAL Serial1
 #else
-#define RFID_SERIAL SoftwareSerial(6, 8);
+  #define RFID_SERIAL SoftwareSerial(6, 8);
 #endif
 
 const byte RFID_BUFFER_SIZE = 14;  // RFID DATA FRAME FORMAT: 1byte head (value: 2), 10byte data (2byte version + 8byte tag), 2byte checksum, 1byte tail (value: 3)
@@ -16,7 +16,6 @@ const byte RFID_DATA_SIZE = 10;    // 10byte data (2byte version + 8byte tag)
 const byte DATA_VERSION_SIZE = 2;  // 2byte version (actual meaning of these two bytes may vary)
 const byte DATA_TAG_SIZE = 8;      // 8byte tag
 const byte CHECKSUM_SIZE = 2;      // 2byte checksum
-const unsigned int RFID_CHECK_TIMEOUT = 2500; // ms
 
 uint8_t rfid_buffer[RFID_BUFFER_SIZE];  // used to store an incoming data frame
 byte rfid_buffer_index = 0;
@@ -38,6 +37,12 @@ unsigned int extract_tag() {
   uint8_t *msg_data_tag = msg_data + 2;
   uint8_t *msg_checksum = rfid_buffer + 11;
   uint8_t msg_tail = rfid_buffer[13];
+
+  long int tag = hexstr_to_value((char *)msg_data_tag, DATA_TAG_SIZE);
+
+  if (!RFID_DEBUG) {
+    return (unsigned int)tag;
+  }
 
   Serial.write("--------\n");
 
@@ -64,8 +69,6 @@ unsigned int extract_tag() {
   Serial.println(msg_tail);
 
   Serial.write("--\n");
-
-  long int tag = hexstr_to_value((char *)msg_data_tag, DATA_TAG_SIZE);
   Serial.write("Extracted Tag: ");
   Serial.println(tag);
 

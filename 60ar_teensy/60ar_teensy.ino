@@ -15,6 +15,8 @@ using namespace qindesign::network;
 const char *filename = "ids.txt";  // 8+3 filename max
 
 const unsigned int BAUD_RATE = 115200;
+const unsigned int RFID_CHECK_TIMEOUT = 2500; // ms
+const unsigned int rfid_timeout_check = 0;
 
 const byte pin_DATA = 13;
 const byte pin_SUCCESS = 14;
@@ -141,16 +143,22 @@ void setup() {
   // loadUserURL();
 
   Serial.println(F("Init complete"));
+  // test relay
+  // digitalWrite(pin_RELAY, HIGH);
+  // delay(5000);
+  // digitalWrite(pin_RELAY, LOW);
 }
 
 void loop() {
   bool found_tag = readRFID();
-  if (found_tag) {
+  unsigned long now = millis();
+
+  if (found_tag && (now - rfid_timeout_check >= RFID_CHECK_TIMEOUT)) {
     // prevent multi fires, convert to mills check
     RFID_SERIAL.clear();
     Serial.print(F("Good tag, sleeping for: "));
     Serial.println(RFID_CHECK_TIMEOUT);
-    delay(RFID_CHECK_TIMEOUT);
+    rfid_timeout_check = now;
   }
   delay(100);
 }
