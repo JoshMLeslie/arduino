@@ -90,15 +90,17 @@ void initLights() {
 }
 
 void checkLights() {
-  analogWrite(pin_DATA, HIGH);
+  analogWrite(pin_DATA, 255);
   delay(250);
-  analogWrite(pin_DATA, LOW);
-  analogWrite(pin_SUCCESS, HIGH);
+  analogWrite(pin_DATA, 0);
+  delay(1);
+  analogWrite(pin_SUCCESS, 255);
   delay(250);
-  analogWrite(pin_SUCCESS, LOW);
-  analogWrite(pin_ERROR, HIGH);
+  analogWrite(pin_SUCCESS, 0);
+  delay(1);
+  analogWrite(pin_ERROR, 255);
   delay(250);
-  analogWrite(pin_ERROR, LOW);
+  analogWrite(pin_ERROR, 0);
 }
 
 void setup() {
@@ -136,8 +138,8 @@ void loop() {
     Serial.print(F("Read tag, resetting timeout."));
     rfid_timeout_check = now;
 
-    bool tag_on_SD = checkID_SD(read_tag);
-
+    checkID_SD(read_tag);
+    // bool tag_on_SD = checkID_SD(read_tag);
     // if (!tag_on_SD && has_http_access && strln(user_id_url) > 0) {
       // Serial.println("Checking for tag at provided URL")
       // TODO GET/:userid fallback
