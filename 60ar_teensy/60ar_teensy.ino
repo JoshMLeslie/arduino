@@ -14,19 +14,20 @@ using namespace qindesign::network;
 /** FOR TEENSY 4.1 */
 
 // File must be formatted JSON and alike { "url": "www.foo.com/user/ids", "ids": [] }
-static const char *filename = "ids.txt";  // 8+3 filename max
+const char *filename = "ids.txt";  // 8+3 filename max
 
-static const unsigned int BAUD_RATE = 115200;
-static const unsigned int RFID_CHECK_TIMEOUT = 2500;  // ms
+const unsigned int BAUD_RATE = 115200;
+const unsigned int RFID_CHECK_TIMEOUT = 2500;  // ms
 
-static const byte pin_DATA = 13;
-static const byte pin_SUCCESS = 14;
-static const byte pin_ERROR = 15;
-static const byte pin_RELAY = 33;
+const byte pin_DATA = 13;
+const byte pin_SUCCESS = 14;
+const byte pin_ERROR = 15;
+const byte pin_RELAY = 33;
+const byte pin_BUZZER = 34;
 
 volatile unsigned int rfid_timeout_check = 0;
 
-static byte mac[] = { 0x04, 0xE9, 0xE5, 0x14, 0xDD, 0x62 };
+const byte mac[] = { 0x04, 0xE9, 0xE5, 0x14, 0xDD, 0x62 };
 bool has_http_access = false;
 AsyncHTTPRequest request;
 char user_id_url[256];
@@ -67,8 +68,8 @@ void checkSD() {
 }
 
 // void loadUserURL() {
-//   StaticJsonDocument<64> doc;
-//   StaticJsonDocument<64> filter;
+//   sonDocument<64> doc;
+//   sonDocument<64> filter;
 //   filter["url"] = true;
 
 //   // TODO input...
@@ -110,7 +111,8 @@ void setup() {
   while (!Serial)
     ;
 
-  play_song(melody, sizeof(melody)/sizeof(melody[0])/2);
+  pinMode(pin_BUZZER, OUTPUT);
+  play_song(melody, sizeof(melody)/sizeof(melody[0])/2, 288, pin_BUZZER);
 
   initLights();
   checkLights();
