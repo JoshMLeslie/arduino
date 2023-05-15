@@ -8,6 +8,8 @@ using namespace qindesign::network;
 #include <SD.h>
 // local files
 #include "rfid.h"
+#include "player.h"
+#include "song.h"
 
 /** FOR TEENSY 4.1 */
 
@@ -108,6 +110,7 @@ void setup() {
   while (!Serial)
     ;
 
+  play_song(melody, sizeof(melody)/sizeof(melody[0])/2);
 
   initLights();
   checkLights();
