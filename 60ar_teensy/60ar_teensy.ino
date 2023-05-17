@@ -6,10 +6,6 @@
 using namespace qindesign::network;
 // SD Card
 #include <SD.h>
-// local files
-#include "rfid.h"
-#include "player.h"
-#include "song.h"
 
 /** FOR TEENSY 4.1 */
 
@@ -25,6 +21,8 @@ const byte pin_ERROR = 15;
 const byte pin_RELAY = 33;
 const byte pin_BUZZER = 34;
 
+const int MAX_TEMP_C = 30;
+
 volatile unsigned int rfid_timeout_check = 0;
 
 const byte mac[] = { 0x04, 0xE9, 0xE5, 0x14, 0xDD, 0x62 };
@@ -32,7 +30,13 @@ bool has_http_access = false;
 AsyncHTTPRequest request;
 char user_id_url[256];
 
+// local files
+#include "rfid.h"
+#include "temp.h"
 #include "check_id.h"
+// funsies
+#include "player.h"
+#include "song.h"
 
 // SETUP Fns
 void initEthernet() {
@@ -43,8 +47,7 @@ void initEthernet() {
     Serial.println(Ethernet.localIP());
     has_http_access = true;
   } else {
-    Serial.println(F("Failed to link via DHCP"));
-    Serial.println(F("Can only validate against stored IDs"));
+    Serial.println(F("Uplink failed"));
   }
 }
 
@@ -96,11 +99,9 @@ void checkLights() {
   analogWrite(pin_DATA, 255);
   delay(250);
   analogWrite(pin_DATA, 0);
-  delay(1);
   analogWrite(pin_SUCCESS, 255);
   delay(250);
   analogWrite(pin_SUCCESS, 0);
-  delay(1);
   analogWrite(pin_ERROR, 255);
   delay(250);
   analogWrite(pin_ERROR, 0);
@@ -108,11 +109,10 @@ void checkLights() {
 
 void setup() {
   Serial.begin(BAUD_RATE);
-  while (!Serial)
-    ;
+  while (!Serial);
 
-  pinMode(pin_BUZZER, OUTPUT);
-  play_song(melody, sizeof(melody)/sizeof(melody[0])/2, 288, pin_BUZZER);
+  // pinMode(pin_BUZZER, OUTPUT);
+  // play_song(melody, sizeof(melody)/sizeof(melody[0])/2, 288, pin_BUZZER);
 
   initLights();
   checkLights();
@@ -123,6 +123,7 @@ void setup() {
   initSD();
   checkSD();
   initRFID();
+  initTemp();
 
   // todo - load from SD card
   // loadUserURL();
@@ -135,6 +136,14 @@ void setup() {
 }
 
 void loop() {
+  float temp_c = get_temp_C();
+
+  if (temp_c >= MAX_TEMP_C && !fan_state) {
+    fan_on();
+  } else if (temp_c < MAX_TEMP_C && fan_state) {
+    fan_off();
+  }
+
   unsigned int read_tag = readRFID();
   unsigned long now = millis();
 

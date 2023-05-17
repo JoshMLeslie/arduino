@@ -8,7 +8,7 @@ const bool RFID_DEBUG = false;
 #if defined(__IMXRT1062__)
   #define RFID_SERIAL Serial1
 #else
-  #define RFID_SERIAL SoftwareSerial(6, 8);
+  #define RFID_SERIAL SoftwareSerial(6, 8)
 #endif
 
 const byte RFID_BUFFER_SIZE = 14;  // RFID DATA FRAME FORMAT: 1byte head (value: 2), 10byte data (2byte version + 8byte tag), 2byte checksum, 1byte tail (value: 3)
