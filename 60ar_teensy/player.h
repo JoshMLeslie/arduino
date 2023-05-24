@@ -1,9 +1,6 @@
 // via https://github.com/robsoncouto/arduino-songs/
 #include "notes.h"
 
-
-
-
 void play_song(int melody[], size_t note_sz, int tempo = 144, byte pin = 11) {
   int divider = 0, noteDuration = 0;
 

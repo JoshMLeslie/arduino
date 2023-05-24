@@ -3,7 +3,6 @@ RFID reader
 
 Call #readRFID() to get the tag. Uses Teensy Serial1 or SoftwareSerial(6,8) for others
 */
-const bool RFID_DEBUG = false;
 // RFID setup
 #if defined(__IMXRT1062__)
   #define RFID_SERIAL Serial1
@@ -40,7 +39,7 @@ unsigned int extract_tag() {
 
   long int tag = hexstr_to_value((char *)msg_data_tag, DATA_TAG_SIZE);
 
-  if (!RFID_DEBUG) {
+  if (!DEBUG_RFID) {
     return (unsigned int)tag;
   }
 
@@ -91,6 +90,7 @@ unsigned int extract_tag() {
 }
 unsigned int readRFID() {
   if (RFID_SERIAL.available() > 0) {
+    set_access_led(DATA, true);
     bool call_extract_tag = false;
 
     int rfid_val = RFID_SERIAL.read();  // read
