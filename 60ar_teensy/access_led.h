@@ -1,6 +1,6 @@
 #include <TimeOut.h>
-const LED_ON = 255;
-const LED_OFF = 0;
+const byte LED_ON = 255;
+const byte LED_OFF = 0;
 const unsigned long DEFAULT_TIMEOUT = 2000;
 
 enum ACCESS_LED {
@@ -39,8 +39,7 @@ void checkLights() {
 
 void set_only_led(byte pin) {
   for (byte i = static_cast<byte>(DATA); i != static_cast<byte>(NEMO); i++) {
-      analogWrite(i, pin == i ? LED_ON : LED_OFF);
-    }
+    analogWrite(i, pin == i ? LED_ON : LED_OFF);
   }
 }
 

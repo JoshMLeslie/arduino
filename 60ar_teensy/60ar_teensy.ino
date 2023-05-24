@@ -28,11 +28,13 @@ const char *filename = "ids.txt";  // 8+3 filename max
 
 const unsigned int BAUD_RATE = 115200;
 
-const unsigned int RFID_CHECK_TIMEOUT = 2000;
+unsigned long TIMEOUT_RELAY = 3600000;  // 1 hr
+const unsigned int TIMEOUT_RFID = 5000;
+const unsigned int TIMEOUT_TEMP = 2000;
+
 byte USER_ID_LENGTH = 10;
 unsigned int last_tag = 0;
 
-unsigned long RELAY_TIMEOUT = 3600000;  // 1 hr
 bool relay_live = false;
 
 const byte pin_DATA = 13;
@@ -43,8 +45,9 @@ const byte pin_BUZZER = 34;
 
 const int MAX_TEMP_C = 30;
 
-volatile unsigned long rfid_timeout_check = 0;
-volatile unsigned long relay_check = 0;
+volatile unsigned long timeout_check_rfid = 0;
+volatile unsigned long timeout_check_relay = 0;
+volatile unsigned long timeout_check_temp = 0;
 
 const byte mac[] = { 0x04, 0xE9, 0xE5, 0x14, 0xDD, 0x62 };
 bool has_uplink = false;
@@ -118,12 +121,12 @@ void checkSD() {
 void set_relay_live() {
   digitalWrite(pin_RELAY, HIGH);
   relay_live = true;
-  relay_check = millis();
+  timeout_check_relay = millis();
 }
 void set_relay_dead() {
   digitalWrite(pin_RELAY, LOW);
   relay_live = false;
-  relay_check = 0;
+  timeout_check_relay = 0;
 }
 
 void setup() {
@@ -157,21 +160,24 @@ void loop() {
   TimeOut::handler();
   unsigned long now = millis();
 
-  float temp_c = get_temp_C();
-  if (temp_c >= MAX_TEMP_C && !fan_state) {
-    fan_on();
-  } else if (temp_c < MAX_TEMP_C && fan_state) {
-    fan_off();
+  if (now - timeout_check_temp >= TIMEOUT_TEMP ) {
+    float temp_c = get_temp_C();
+    if (temp_c >= MAX_TEMP_C && !fan_state) {
+      fan_on();
+    } else if (temp_c < MAX_TEMP_C && fan_state) {
+      fan_off();
+    }
+    timeout_check_temp = now;
   }
 
-  if (now - relay_check >= RELAY_TIMEOUT) {
+  if (now - timeout_check_relay >= TIMEOUT_RELAY) {
     set_access_led(ERROR, true);
     set_relay_dead();
   }
 
   unsigned int read_tag = readRFID(); // sets pin_DATA HIGH
 
-  if (read_tag && (now - rfid_timeout_check >= RFID_CHECK_TIMEOUT)) {
+  if (read_tag && (now - timeout_check_rfid >= TIMEOUT_RFID)) {
     RFID_SERIAL.clear();
 
     if (
@@ -195,7 +201,7 @@ void loop() {
       }
     }
     set_access_led(DATA, false);
-    rfid_timeout_check = now;
+    timeout_check_rfid = now;
     Serial.println(F("Finished with tag, resetting rfid."));
   }
 }
