@@ -18,6 +18,8 @@ const byte CHECKSUM_SIZE = 2;      // 2byte checksum
 
 uint8_t rfid_buffer[RFID_BUFFER_SIZE];  // used to store an incoming data frame
 byte rfid_buffer_index = 0;
+
+bool is_reading = false;
 // end RFID setup
 
 long int hexstr_to_value(char *str, unsigned int length) {
@@ -90,11 +92,16 @@ unsigned int extract_tag() {
 }
 unsigned int readRFID() {
   if (RFID_SERIAL.available() > 0) {
-    set_access_led(DATA, true);
     bool call_extract_tag = false;
+
+    if (!is_reading) {
+      set_access_led(DATA, true);
+      is_reading = true;
+    }
 
     int rfid_val = RFID_SERIAL.read();  // read
     if (rfid_val == -1) {               // no data was read
+      is_reading = false;
       return 0;
     }
 
@@ -107,6 +114,7 @@ unsigned int readRFID() {
     if (rfid_buffer_index >= RFID_BUFFER_SIZE) {  // checking for a buffer overflow (It's very unlikely that a buffer overflow comes up!)
       Serial.println("Error: Buffer overflow detected! ");
       rfid_buffer_index = 0;  // reset buffer index to prevent further issues
+      is_reading = false;
       return 0;
     }
 
@@ -118,11 +126,14 @@ unsigned int readRFID() {
         if (tag) {
           Serial.print("Found tag: ");
           Serial.println(tag);
+          RFID_SERIAL.clear();
+          is_reading = false;
           return tag;
         }
       } else {  // something is wrong... start again looking for preamble (value: 2)
         Serial.println("Error: Incomplete RFID message detected!");
         rfid_buffer_index = 0;  // reset buffer index to prevent further issues
+        is_reading = false;
         return 0;
       }
     }

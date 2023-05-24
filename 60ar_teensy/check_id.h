@@ -2,6 +2,7 @@
   given an id (alphanumeric length <= 10), this will ping the SD Card to check if it exists
 */
 bool checkID_SD(unsigned int id) {
+  set_access_led(DATA, true);
   String tag_str = String(id);
   while (tag_str.length() < 10) {
     tag_str = "0" + tag_str;
@@ -50,12 +51,14 @@ bool checkID_SD(unsigned int id) {
 
       if (strcmp(buffer_num, tag_char) == 0) {
         Serial.println(F("Found valid ID!"));
+        set_access_led(DATA, false);
         return true;
       }
     }
     Serial.println(F("No matching ID found"));
     Serial.print(F("Elapsed time (ms): "));
     Serial.println(millis() - start);
+    set_access_led(DATA, false);
     return false;
   }
   return false;

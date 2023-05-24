@@ -1,4 +1,3 @@
-#include <TimeOut.h>
 const byte LED_ON = 255;
 const byte LED_OFF = 0;
 const unsigned long DEFAULT_TIMEOUT = 2000;
@@ -10,10 +9,7 @@ enum ACCESS_LED {
   NEMO = 16
 };
 
-byte last_pin;
-bool last_state;
-
-void set_only_led(byte channel, bool state);
+void set_only_pin(byte channel, bool state);
 void set_access_led(byte channel, bool state);
 void set_access_led(ACCESS_LED channel, bool state);
 void set_access_led(ACCESS_LED channel, long timeout);
@@ -37,23 +33,14 @@ void checkLights() {
   analogWrite(pin_ERROR, LED_OFF);
 }
 
-void set_only_led(byte pin) {
+void set_only_pin(byte pin) {
   for (byte i = static_cast<byte>(DATA); i != static_cast<byte>(NEMO); i++) {
     analogWrite(i, pin == i ? LED_ON : LED_OFF);
   }
 }
 
 void set_access_led(byte pin, bool state) {
-  if (last_pin == pin && last_state == state) {
-    return;
-  }
-  if (state) {
-    set_only_led(pin);
-  } else {
-    analogWrite(pin, LED_OFF);
-  }
-  last_pin = pin;
-  last_state = state;
+  analogWrite(pin, state ? LED_ON : LED_OFF);
 }
 
 void set_access_led(ACCESS_LED channel, bool state) {

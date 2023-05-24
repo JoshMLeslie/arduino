@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <ArduinoJson.h>
+#include <TimeOut.h>
 // Ethernet
 #include "QNEthernet.h"
 #include <AsyncHTTPRequest_Teensy41.h>
@@ -29,8 +30,8 @@ const char *filename = "ids.txt";  // 8+3 filename max
 const unsigned int BAUD_RATE = 115200;
 
 unsigned long TIMEOUT_RELAY = 3600000;  // 1 hr
-const unsigned int TIMEOUT_RFID = 5000;
-const unsigned int TIMEOUT_TEMP = 2000;
+const unsigned long TIMEOUT_RFID = 10000;
+const unsigned long TIMEOUT_TEMP = 2000;
 
 byte USER_ID_LENGTH = 10;
 unsigned int last_tag = 0;
@@ -131,7 +132,8 @@ void set_relay_dead() {
 
 void setup() {
   Serial.begin(BAUD_RATE);
-  while (!Serial);
+  while (!Serial)
+    ;
 
   // pinMode(pin_BUZZER, OUTPUT);
   // play_song(melody, sizeof(melody)/sizeof(melody[0])/2, 288, pin_BUZZER);
@@ -158,50 +160,64 @@ void setup() {
 
 void loop() {
   TimeOut::handler();
-  unsigned long now = millis();
 
-  if (now - timeout_check_temp >= TIMEOUT_TEMP ) {
+  if (millis() - timeout_check_temp >= TIMEOUT_TEMP) {
     float temp_c = get_temp_C();
     if (temp_c >= MAX_TEMP_C && !fan_state) {
       fan_on();
     } else if (temp_c < MAX_TEMP_C && fan_state) {
       fan_off();
     }
-    timeout_check_temp = now;
-  }
+    timeout_check_temp = millis();
+  };
 
-  if (now - timeout_check_relay >= TIMEOUT_RELAY) {
-    set_access_led(ERROR, true);
+  if (millis() - timeout_check_relay >= TIMEOUT_RELAY) {
+    set_access_led(ERROR, (unsigned long)10000);
     set_relay_dead();
   }
 
-  unsigned int read_tag = readRFID(); // sets pin_DATA HIGH
+  // User check
+  unsigned int read_tag = readRFID();  // sets pin_DATA HIGH
+  if (read_tag <= 0) {
+    set_access_led(DATA, false);
+  }
 
-  if (read_tag && (now - timeout_check_rfid >= TIMEOUT_RFID)) {
-    RFID_SERIAL.clear();
-
-    if (
-      (last_tag == read_tag && relay_live)
-    ) {
+  if (read_tag && (
+      (last_tag == read_tag && relay_live) ||
+      millis() < TIMEOUT_RFID ||
+      millis() - timeout_check_rfid >= TIMEOUT_RFID
+    )
+  ) {
+    Serial.print("now ");
+    Serial.print(millis());
+    Serial.print(" | timeout_check_rfid ");
+    Serial.print(timeout_check_rfid);
+    Serial.print(" | now - timeout_check_rfid ");
+    Serial.println(millis() - timeout_check_rfid);
+    if (last_tag == read_tag && relay_live) {
+      // logout
       set_access_led(SUCCESS);
       set_relay_dead();
-    } else if (checkID_SD(read_tag)) {
+      last_tag = 0;
+      delay(2000);
+    }
+    else if (checkID_SD(read_tag)) {
+      // login
       set_access_led(SUCCESS);
       set_relay_live();
       last_tag = read_tag;
-    } else {
-      if (has_uplink && strlen(user_id_url) > 0) {
-        Serial.println(F("Checking for tag at URL"));
-        // TODO GET : userid fallback & Update SD
-
-      } else {
-        Serial.print(F("Invalid user "));
-        Serial.println(read_tag);
-        set_access_led(ERROR);
-      }
+    }
+    else if (has_uplink && strlen(user_id_url) > 0) {
+      Serial.println(F("Checking for tag at URL"));
+      // TODO GET : userid fallback & Update SD
+    }
+    else {
+      Serial.print(F("Invalid user "));
+      Serial.println(read_tag);
+      set_access_led(ERROR);
     }
     set_access_led(DATA, false);
-    timeout_check_rfid = now;
+    timeout_check_rfid = millis();
     Serial.println(F("Finished with tag, resetting rfid."));
   }
 }
