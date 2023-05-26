@@ -9,6 +9,11 @@ using namespace qindesign::network;
 // SD Card
 #include <SD.h>
 
+// debugs
+const bool DEBUG_TEMP = false;
+const bool DEBUG_RFID = false;
+const bool DEBUG_ACCESS_LED = false;
+
 /** FOR TEENSY 4.1 */
 
 /* File must be formatted JSON and alike:
@@ -30,7 +35,7 @@ const char *filename = "ids.txt";  // 8+3 filename max
 const unsigned int BAUD_RATE = 115200;
 
 unsigned long TIMEOUT_RELAY = 3600000;  // 1 hr
-const unsigned long TIMEOUT_RFID = 10000;
+const unsigned long TIMEOUT_RFID = 5000;
 const unsigned long TIMEOUT_TEMP = 2000;
 
 byte USER_ID_LENGTH = 10;
@@ -54,11 +59,6 @@ const byte mac[] = { 0x04, 0xE9, 0xE5, 0x14, 0xDD, 0x62 };
 bool has_uplink = false;
 AsyncHTTPRequest request;
 char user_id_url[256];
-
-// debugs
-const bool DEBUG_TEMP = false;
-const bool DEBUG_RFID = false;
-const bool DEBUG_ACCESS_LED = true;
 
 // local files
 #include "access_led.h"
@@ -182,36 +182,22 @@ void loop() {
     set_access_led(DATA, false);
   }
 
-  if (read_tag && (
-      (last_tag == read_tag && relay_live) ||
-      millis() < TIMEOUT_RFID ||
-      millis() - timeout_check_rfid >= TIMEOUT_RFID
-    )
-  ) {
-    Serial.print("now ");
-    Serial.print(millis());
-    Serial.print(" | timeout_check_rfid ");
-    Serial.print(timeout_check_rfid);
-    Serial.print(" | now - timeout_check_rfid ");
-    Serial.println(millis() - timeout_check_rfid);
+  if (read_tag && (millis() < TIMEOUT_RFID || millis() - timeout_check_rfid >= TIMEOUT_RFID)) {
     if (last_tag == read_tag && relay_live) {
       // logout
       set_access_led(SUCCESS);
       set_relay_dead();
       last_tag = 0;
       delay(2000);
-    }
-    else if (checkID_SD(read_tag)) {
+    } else if (checkID_SD(read_tag)) {
       // login
       set_access_led(SUCCESS);
       set_relay_live();
       last_tag = read_tag;
-    }
-    else if (has_uplink && strlen(user_id_url) > 0) {
+    } else if (has_uplink && strlen(user_id_url) > 0) {
       Serial.println(F("Checking for tag at URL"));
       // TODO GET : userid fallback & Update SD
-    }
-    else {
+    } else {
       Serial.print(F("Invalid user "));
       Serial.println(read_tag);
       set_access_led(ERROR);

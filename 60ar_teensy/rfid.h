@@ -124,8 +124,10 @@ unsigned int readRFID() {
       if (rfid_buffer_index == RFID_BUFFER_SIZE) {
         unsigned int tag = extract_tag();
         if (tag) {
-          Serial.print("Found tag: ");
-          Serial.println(tag);
+          if (DEBUG_RFID) {
+            Serial.print("Found tag: ");
+            Serial.println(tag);
+          }
           RFID_SERIAL.clear();
           is_reading = false;
           return tag;
