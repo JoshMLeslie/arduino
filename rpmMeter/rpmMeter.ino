@@ -114,7 +114,7 @@ void lcdSetup() {
   lcd.setCursor(0, 1);
   lcd.print("Dist: ");
   lcd.print(dist, 1);
-}
+} 
 
 void distSetup() {
   EEPROM.get(0, dist);
